@@ -15,7 +15,13 @@ function validateId(fileName, id){
 
 function getUsers(){
 	var data = fs.readFileSync(_fileName).toString();
-	var users = JSON.parse(data);
+	var users;
+	if(data != "") {
+		users = JSON.parse(data);
+	}
+	else {
+		users = [];
+	}
 	return users;
 }
 

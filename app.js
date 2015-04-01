@@ -16,7 +16,7 @@ var server = http.createServer(function(request, response)
 		var user = querystring.parse(urlObj.query);
 		userModule.createUser(user, function(err){
 			if(err)
-				return console.log(err);
+				return response.end(err);
 			else
 				response.end("User added sucessfully");
 		});
