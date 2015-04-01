@@ -13,20 +13,18 @@ function validateId(fileName, id){
 	return true;
 }
 
-function validateIdAsync(fileName, id){
+function exists(fileName, id, callback){
 	fs.readFile(fileName, function(err, data){
 		if(err)
 			return console.log(err);
 		var users = JSON.parse(data.toString());
 		for(var i = 0; i < users.length; i ++)
-			if(users[i].id == id)
-				return function() {
-					return false;
-				}
-		return function() {
-			return true;
-		}
-	})
+			if(users[i].id == id.id)
+			{
+				return callback(true);
+			}
+		callback(false);
+	});
 }
 
 function getUsers(){
@@ -39,6 +37,17 @@ function getUsers(){
 		users = [];
 	}
 	return users;
+}
+
+function getUsersAsync(callback){
+	fs.readFile(_fileName, function(err, data){
+		var users;
+		if(data.toString() != "")
+			users = JSON.parse(data.toString());
+		else
+			users = [];
+		callback(users);
+	})
 }
 
 function getFileName(){
@@ -55,21 +64,45 @@ function writeUserToFile(user){
 	});
 }
 
+function writeUserToFileAsync(user){
+	getUsersAsync(function(users){
+		users.push(user);
+		fs.writeFile(_fileName, JSON.stringify(users), function(err){
+			if(err)
+				console.log("Couldn't add user to file");
+		});
+	});
+}
+
 function deleteUser(id){
 	var users = getUsers();
 	var mod_users = [];
 	for(var i = 0; i < users.length; i++){
 		if(users[i].id !== id.id)
 		{
-			console.log(users[i], id.id);
 			mod_users.push(users[i]);
-		}
-			
+		}	
 	}
 	fs.writeFile(_fileName, JSON.stringify(mod_users), function(err){
 		if(err)
 			return console.log(err);
 	});
+}
+
+function deleteUserAsync(id){
+	getUsersAsync(function(users){
+		var mod_users = [];
+		for(var i = 0; i < users.length; i++){
+			if(users[i].id !== id.id)
+			{
+				mod_users.push(users[i]);
+			}	
+		}
+		fs.writeFile(_fileName, JSON.stringify(mod_users), function(err){
+			if(err)
+				return console.log(err);
+		});
+	})
 }
 
 module.exports = {
@@ -86,9 +119,24 @@ module.exports = {
 			callback("Invalid object send");
 	},
 
+	createUserAsync: function(user, callback){
+		if(user.id && user.username){
+			exists(_fileName, {id: user.id}, function(valid){
+				if(!valid){
+					writeUserToFileAsync(user);
+					callback(null);
+				}
+				else
+					callback("Could not create user. Reason - id duplication");
+			})
+		}
+		else
+			callback("Invalid object send");
+	},
+
 	deleteUser: function(id, callback){
 		if(id){
-			if(!validateIdAsync(_fileName, id.id)){
+			if(!validateId(_fileName, id.id)){
 				deleteUser(id);
 				callback(null);
 			}
@@ -100,8 +148,28 @@ module.exports = {
 			callback("Invalid object send");
 	},
 
+	deleteUserAsync: function(id, callback){
+		exists(_fileName, id, function(valid){
+			if(id.id){
+				if(valid){
+					deleteUserAsync(id);
+					callback(null);
+				}
+				else{
+					callback("User with given id doesn't exist")
+				}
+			}
+			else
+				callback("Invalid object send");
+		})
+	},
+
 	getAll: function(callback){
 		var users = getUsers();
 		callback(users);
+	},
+
+	getAllAsync: function(callback){
+		getUsersAsync(callback);
 	}
 }

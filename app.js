@@ -14,7 +14,7 @@ var server = http.createServer(function(request, response)
 	{
 		var urlObj = url.parse(requestUrl);
 		var user = querystring.parse(urlObj.query);
-		userModule.createUser(user, function(err){
+		userModule.createUserAsync(user, function(err){
 			if(err)
 				response.end(err);
 			else
@@ -25,8 +25,7 @@ var server = http.createServer(function(request, response)
 	{
 		var urlObj = url.parse(requestUrl);
 		var id = querystring.parse(urlObj.query);
-		console.log(id);
-		userModule.deleteUser(id, function(err){
+		userModule.deleteUserAsync(id, function(err){
 			if(err)
 				response.end(err);
 			else
@@ -35,7 +34,7 @@ var server = http.createServer(function(request, response)
 	}
 	else if(/^\/user\/all/.test(requestUrl))
 	{
-		userModule.getAll(function(data){
+		userModule.getAllAsync(function(data){
 			response.end(JSON.stringify(data));
 		});
 	}
