@@ -3,21 +3,18 @@ var fs = require('fs');
 var _fileName = getFileName();
 
 function validateId(fileName, id){
-	fs.readFile(fileName, function(err, data){
-		if(err)
-			return console.log("There was an error: ", err);
-		stringData = data.toString();
+	stringData = fs.readFileSync(fileName).toString();
+	if(stringData !== ""){
 		var users = JSON.parse(stringData);
-		for(var i = 0; i < id; i ++){
-			if(users[i].id === id)
+		for(var i = 0; i < users.length; i ++)
+			if(users[i].id == id)
 				return false;
-		}
-		return true;
-	})
+	}
+	return true;
 }
 
 function getUsers(){
-	var data = fs.readFileSync(fileName).toString();
+	var data = fs.readFileSync(_fileName).toString();
 	var users = JSON.parse(data);
 	return users;
 }
@@ -28,7 +25,9 @@ function getFileName(){
 }
 
 function writeUserToFile(user){
-	fs.appendFile(_fileName, JSON.stringify(user), function (err) {
+	var users = getUsers();
+	users.push(user);
+	fs.writeFile(_fileName, JSON.stringify(users), function (err) {
   		if (err) 
   			console.log("Couldn't add user to file");
 	});
@@ -56,15 +55,27 @@ function deleteUser(id){
 
 module.exports = {
 	createUser: function(user, callback){
-		if(validateId(_fileName, user.id))
-			writeUserToFile(user);
-	},
-	
-	deleteUser: function(id, callback){
-		if(!validateId(_fileName, id.id)){
-			deleteUser(id.id);
-			callback(true);
+		if(user.id && user.username){
+			if(validateId(_fileName, user.id)){
+				writeUserToFile(user);
+				callback(null);
+			}
+			else
+				callback("Could not create user. Reason - id duplication");
 		}
+		else
+			callback("Invalid object send");
+	},
+
+	deleteUser: function(id, callback){
+		if(id.id){
+			if(!validateId(_fileName, id.id)){
+				deleteUser(id.id);
+				callback(true);
+			}
+		}
+		else
+			callback(false);
 	},
 
 	getAll: function(callback){
