@@ -13,6 +13,22 @@ function validateId(fileName, id){
 	return true;
 }
 
+function validateIdAsync(fileName, id){
+	fs.readFile(fileName, function(err, data){
+		if(err)
+			return console.log(err);
+		var users = JSON.parse(data.toString());
+		for(var i = 0; i < users.length; i ++)
+			if(users[i].id == id)
+				return function() {
+					return false;
+				}
+		return function() {
+			return true;
+		}
+	})
+}
+
 function getUsers(){
 	var data = fs.readFileSync(_fileName).toString();
 	var users;
@@ -40,23 +56,20 @@ function writeUserToFile(user){
 }
 
 function deleteUser(id){
-	fs.readFile(fileName, function(err, data){
-		var result = [];
-		if(err)
-			return console.log("There was an error: ", err);
-		stringData = data.toString();
-		var users = JSON.parse(stringData);
-		for(var i = 0; i < users.length; i ++){
-			if(users[i].id === id)
-				continue;
-			else
-				result.push(users[i]);
+	var users = getUsers();
+	var mod_users = [];
+	for(var i = 0; i < users.length; i++){
+		if(users[i].id !== id.id)
+		{
+			console.log(users[i], id.id);
+			mod_users.push(users[i]);
 		}
-		fs.writeFile(fileName, function(err){
-			if(err)
-				console.log('There was an error: ', err);
-		});
-	})
+			
+	}
+	fs.writeFile(_fileName, JSON.stringify(mod_users), function(err){
+		if(err)
+			return console.log(err);
+	});
 }
 
 module.exports = {
@@ -74,14 +87,17 @@ module.exports = {
 	},
 
 	deleteUser: function(id, callback){
-		if(id.id){
-			if(!validateId(_fileName, id.id)){
-				deleteUser(id.id);
-				callback(true);
+		if(id){
+			if(!validateIdAsync(_fileName, id.id)){
+				deleteUser(id);
+				callback(null);
+			}
+			else{
+				callback("User with given id doesn't exist")
 			}
 		}
 		else
-			callback(false);
+			callback("Invalid object send");
 	},
 
 	getAll: function(callback){

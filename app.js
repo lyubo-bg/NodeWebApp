@@ -16,9 +16,9 @@ var server = http.createServer(function(request, response)
 		var user = querystring.parse(urlObj.query);
 		userModule.createUser(user, function(err){
 			if(err)
-				return response.end(err);
+				response.end(err);
 			else
-				response.end("User added sucessfully");
+				response.end("User added successfully");
 		});
 	}
 	else if(/^\/user\/delete/.test(requestUrl))
@@ -26,11 +26,17 @@ var server = http.createServer(function(request, response)
 		var urlObj = url.parse(requestUrl);
 		var id = querystring.parse(urlObj.query);
 		console.log(id);
+		userModule.deleteUser(id, function(err){
+			if(err)
+				response.end(err);
+			else
+				response.end("User deleted successfully");
+		});
 	}
 	else if(/^\/user\/all/.test(requestUrl))
 	{
 		userModule.getAll(function(data){
-			response.end(data);
+			response.end(JSON.stringify(data));
 		});
 	}
 });
