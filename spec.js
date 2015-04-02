@@ -32,9 +32,13 @@ function Post(data, query, callback){
 }
 
 describe("MyApp", function() {
-  // beforeEach(function(){
-  //   fs.truncate('./users.json', 0, function(){});
-  // })
+  before(function(){
+    fs.truncate('./users.json', 0, function(){});
+  })
+
+  afterEach(function(){
+    fs.truncate('./users.json', 0, function(){});
+  })
 
   describe("hello", function() {
     it("should say hello", function(done){
@@ -55,5 +59,28 @@ describe("MyApp", function() {
         done(assert.equal("Could not create user. Reason - id duplication", r))
       })
     });
-  })
+  });
+
+  describe("delete user", function(){
+    fs.writeFileSync("./users.json", JSON.stringify([{id: 1, username: "test"}]));
+    it("should delete user", function(done){
+      Post({id:1}, '/user/delete/', function(r){
+        done(assert.equal("User deleted successfully", r));
+      });
+    })
+  });
+
+  describe("get all users", function(){
+    it("should get all users", function(done){
+      var obj = [{"id":"1","username":"test"}, {"id":"2","username":"mike"}];
+      var arr = JSON.stringify(obj);
+      fs.writeFileSync("./users.json", arr);
+      http.get("http://localhost:5544/user/all", function(response){
+        response.on('data', function(data){
+          var objData = JSON.parse(data.toString());
+          done(assert.equal(objData[1].name, obj[1].name));
+        })
+      })
+    });
+  });
 });
