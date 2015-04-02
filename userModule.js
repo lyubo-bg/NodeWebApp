@@ -17,13 +17,17 @@ function exists(fileName, id, callback){
 	fs.readFile(fileName, function(err, data){
 		if(err)
 			return console.log(err);
-		var users = JSON.parse(data.toString());
-		for(var i = 0; i < users.length; i ++)
-			if(users[i].id == id.id)
-			{
-				return callback(true);
-			}
-		callback(false);
+		if(data.toString() != ""){
+			var users = JSON.parse(data.toString());
+			for(var i = 0; i < users.length; i ++)
+				if(users[i].id == id.id)
+				{
+					return callback(true);
+				}
+			callback(false);
+		}
+		else
+			callback(false);
 	});
 }
 
@@ -124,7 +128,7 @@ module.exports = {
 			exists(_fileName, {id: user.id}, function(valid){
 				if(!valid){
 					writeUserToFileAsync(user);
-					callback(null);
+					callback(JSON.stringify(user));
 				}
 				else
 					callback("Could not create user. Reason - id duplication");

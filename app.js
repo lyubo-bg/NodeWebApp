@@ -8,17 +8,14 @@ var server = http.createServer(function(request, response)
 	var requestUrl = request.url.toString();
 	if(/^\/hello/.test(requestUrl))
 	{
-		response.end("Hello Wolrd!");
+		response.end("Hello World!");
 	}
 	else if(/^\/user\/create/.test(requestUrl))
 	{
 		var urlObj = url.parse(requestUrl);
 		var user = querystring.parse(urlObj.query);
-		userModule.createUserAsync(user, function(err){
-			if(err)
-				response.end(err);
-			else
-				response.end("User added successfully");
+		userModule.createUserAsync(user, function(msg){
+				response.end(msg);
 		});
 	}
 	else if(/^\/user\/delete/.test(requestUrl))
