@@ -32,12 +32,8 @@ function Post(data, query, callback){
 }
 
 describe("MyApp", function() {
-  before(function(){
-    fs.truncate('./users.json', 0, function(){});
-  })
-
-  afterEach(function(){
-    fs.truncate('./users.json', 0, function(){});
+  beforeEach(function(){
+    fs.truncateSync('./users.json', 0);
   })
 
   describe("hello", function() {
@@ -52,33 +48,67 @@ describe("MyApp", function() {
 
   describe("create user", function(){
     it("should create user", function(done){
-      Post({id: '1', username: 'test'}, '/user/create', function(r){
-        done(assert.equal(JSON.stringify({id:'1', username: 'test'}), r));
+      var user = {id: '1', username: 'test'};
+      Post(user, '/user/create', function(r){
+        assert.equal(JSON.stringify(user), r);
+        done();
       });
-      Post({id: '1', username: 'asd'}, '/user/create', function(r) {
+    });
+
+    it("shouldn't create user", function(done){
+      fs.writeFileSync("./users.json", JSON.stringify([{id: 1, username: "test"}]));
+      Post({id: '1', username: 'newtest'}, '/user/create', function(r){
         done(assert.equal("Could not create user. Reason - id duplication", r))
       })
     });
   });
 
   describe("delete user", function(){
-    fs.writeFileSync("./users.json", JSON.stringify([{id: 1, username: "test"}]));
-    it("should delete user", function(done){
+    it("shouldn't delete user", function(done){
       Post({id:1}, '/user/delete/', function(r){
-        done(assert.equal("User deleted successfully", r));
+        done(assert.equal("User with given id doesn't exist", r));
       });
     })
+
+    it("should delete user", function(done){
+      var user = {id: '1', username: 'test'};
+      Post(user, '/user/create', function(r){
+        assert.equal(JSON.stringify(user), r);
+        Post({id: 1}, '/user/delete/', function(r2){
+          assert.equal("User deleted successfully", r2);
+          done();
+        });
+      });
+    });
   });
 
   describe("get all users", function(){
+    it("should get one user", function(done){
+      var user = {id: '1', username: 'test'};
+      Post(user, '/user/create', function(r){
+        assert.equal(JSON.stringify(user), r)
+        http.get("http://localhost:5544/user/all", function(response){
+          response.on('data', function(data){
+            //var _user = JSON.parse(data.toString());
+            done(assert.equal(JSON.stringify([user]), data.toString()));
+          })
+        })
+      })
+    });
+
     it("should get all users", function(done){
-      var obj = [{"id":"1","username":"test"}, {"id":"2","username":"mike"}];
-      var arr = JSON.stringify(obj);
-      fs.writeFileSync("./users.json", arr);
-      http.get("http://localhost:5544/user/all", function(response){
-        response.on('data', function(data){
-          var objData = JSON.parse(data.toString());
-          done(assert.equal(objData[1].name, obj[1].name));
+      var userOne = {id: '1', username: 'sam'};
+      var userTwo = {id: '2', username: 'john'};
+      Post(userOne, '/user/create', function(r1){
+        assert.equal(JSON.stringify(userOne), r1)
+        Post(userTwo, '/user/create', function(r2){
+          assert.equal(JSON.stringify(userTwo), r2)
+          http.get("http://localhost:5544/user/all", function(response){
+            response.on('data', function(data){
+              var users = JSON.parse(data.toString());
+              done(assert.equal(JSON.stringify([userOne, userTwo]), data.toString()));
+            })
+          })
         })
       })
     });
